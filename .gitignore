@@ -1,5 +1,6 @@
-# Aulavirtuale-dl ignores
-VideoLezioni/
+# bbbdl ignores
+*.json
+*.mp4
 
 # Python ignores
 **/__pycache__/
