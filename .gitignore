@@ -1,0 +1,11 @@
+# Aulavirtuale-dl ignores
+VideoLezioni/
+
+# Python ignores
+**/__pycache__/
+dist/
+*.egg-info/
+**/*.pyc
+
+# PyCharm ignores
+.idea/
