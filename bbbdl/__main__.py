@@ -59,6 +59,8 @@ def sync(ctx: click.Context, file=None, remote_file=None, overwrite=False, verbo
             ctx.invoke(download, input_url=input_url, output_file=output_file, overwrite=overwrite, verbose_ffmpeg=verbose_ffmpeg)
         except click.ClickException:
             click.echo(f"Skipped: {input_url} -> {output_file}", err=True)
+        except requests.HTTPError as e:
+            click.echo(f"Not available: {input_url} -> HTTP {e.response.status_code}")
 
 
 if __name__ == "__main__":

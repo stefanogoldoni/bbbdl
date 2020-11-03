@@ -46,6 +46,9 @@ class Meeting:
 
     @classmethod
     def from_base_url(cls, base_url: str, meeting_id: str) -> Meeting:
+        r = requests.get(f"{base_url}/presentation/{meeting_id}/metadata.xml")
+        r.raise_for_status()
+
         deskshare = Resource(href=f"{base_url}/presentation/{meeting_id}/deskshare/deskshare.webm")
         webcams = Resource(href=f"{base_url}/presentation/{meeting_id}/video/webcams.mp4")
 
