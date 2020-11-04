@@ -25,9 +25,9 @@ def download(input_url, output_file, overwrite=False, verbose_ffmpeg=False):
     if not overwrite and os.path.exists(output_file):
         raise click.ClickException(f"Output file already exists: {output_file}")
 
-    click.echo(f"Downloading: {input_url} -> {output_file}", err=True)
-
     meeting = Meeting.from_url(input_url)
+
+    click.secho(f"Downloading: {input_url} -> {output_file}", err=True, fg="green")
     streams = compose_lesson(meeting)
     output = ffmpeg.output(*streams, output_file)
 
@@ -46,10 +46,10 @@ def download(input_url, output_file, overwrite=False, verbose_ffmpeg=False):
 @click.pass_context
 def sync(ctx: click.Context, file=None, remote_file=None, overwrite=False, verbose_ffmpeg=False):
     if file:
-        click.echo(f"Syncing from local file: {file.name}", err=True)
+        click.secho(f"Syncing from local file: {file.name}", err=True, bold=True, bg="white", fg="black")
         j = json.load(file)
     elif remote_file:
-        click.echo(f"Syncing from remote file: {remote_file}", err=True)
+        click.secho(f"Syncing from remote file: {remote_file}", err=True, bold=True)
         j = requests.get(remote_file).json()
     else:
         raise click.ClickException("No JSON file was specified.")
@@ -58,9 +58,9 @@ def sync(ctx: click.Context, file=None, remote_file=None, overwrite=False, verbo
         try:
             ctx.invoke(download, input_url=input_url, output_file=output_file, overwrite=overwrite, verbose_ffmpeg=verbose_ffmpeg)
         except click.ClickException:
-            click.echo(f"Skipped: {input_url} -> {output_file}", err=True)
+            click.secho(f"Skipped: {input_url} -> {output_file}", err=True, fg="cyan")
         except requests.HTTPError as e:
-            click.echo(f"Not available: {input_url} -> HTTP {e.response.status_code}")
+            click.secho(f"Not available: {input_url} -> HTTP {e.response.status_code}", err=True, fg="yellow")
 
 
 if __name__ == "__main__":
