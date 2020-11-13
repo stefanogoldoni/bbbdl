@@ -18,7 +18,7 @@ def compose_lesson(meeting: Meeting) -> Tuple[ffmpeg.Stream, ffmpeg.Stream]:
     video_stream, audio_stream = compose_screensharing(meeting)
 
     for shape in meeting.shapes:
-        video_stream = ffmpeg.overlay(video_stream, shape.resource.as_stream().video,
+        video_stream = ffmpeg.overlay(video_stream, shape.resource.as_stream().video.filter("scale", 1280, 720),
                                       enable=f"between(t, {shape.start}, {shape.end})")
 
     return video_stream, audio_stream
