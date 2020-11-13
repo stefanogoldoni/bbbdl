@@ -21,7 +21,9 @@ def main():
               help="Overwrite existing files instead of skipping them.")
 @click.option("-v", "--verbose-ffmpeg", is_flag=True,
               help="Print ffmpeg info to stderr.")
-def download(input_url, output_file, overwrite=False, verbose_ffmpeg=False):
+@click.option("-D", "--debug", is_flag=True,
+              help="Print the compiled ffmpeg command to stdout instead of running it.")
+def download(input_url, output_file, overwrite=False, verbose_ffmpeg=False, debug=False):
     if not overwrite and os.path.exists(output_file):
         raise click.ClickException(f"Output file already exists: {output_file}")
 
@@ -29,9 +31,13 @@ def download(input_url, output_file, overwrite=False, verbose_ffmpeg=False):
 
     click.secho(f"Downloading: {input_url} -> {output_file}", err=True, fg="green")
     streams = compose_lesson(meeting)
+
     output = ffmpeg.output(*streams, output_file)
 
-    output.run(quiet=not verbose_ffmpeg, overwrite_output=True)
+    if debug:
+        click.echo(" ".join(output.compile()))
+    else:
+        output.run(quiet=not verbose_ffmpeg, overwrite_output=True)
 
 
 @main.command()
