@@ -45,3 +45,11 @@ A JSON file containing an object with filename/url pairs:
   "b.mp4": "https://example.org/playback/presentation/2.0/playback.html?meetingId=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb-2222222222222"
 }
 ```
+
+### Development
+
+1. Clone the git repository
+2. Install the dependencies with poetry:
+   ```bash
+   poetry install
+   ```
