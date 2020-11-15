@@ -7,35 +7,42 @@ import ffmpeg
 from .urlhandler import playback_to_data
 
 
-@dataclasses.dataclass()
 class Resource:
-    href: str
+    def __init__(self, href: str):
+        self.href: str = href
+        self._video: Optional[ffmpeg.Stream] = None
+        self._video_count: int = 0
+        self._audio: Optional[ffmpeg.Stream] = None
+        self._audio_count: int = 0
 
-    def as_stream(self, **kwargs) -> ffmpeg.Stream:
-        return ffmpeg.input(self.href, **kwargs)
+    def __repr__(self):
+        return f"<{self.__class__.__qualname__} href={self.href}>"
+
+    @classmethod
+    def check_and_create(cls, href: str) -> Optional[Resource]:
+        """Check if the resource exists, and create it if it does."""
+        r = requests.head(href)
+        if not (200 <= r.status_code < 400):
+            return None
+        return cls(href=href)
+
+    def get_audio(self) -> ffmpeg.nodes.FilterableStream:
+        if self._audio is None:
+            self._audio = ffmpeg.input(self.href).audio.asplit()
+        self._audio_count += 1
+        return self._audio.stream(self._audio_count)
+
+    def get_video(self) -> ffmpeg.nodes.FilterableStream:
+        if self._video is None:
+            self._video = ffmpeg.input(self.href).video.split()
+        self._video_count += 1
+        return self._video.stream(self._video_count)
 
 
 @dataclasses.dataclass()
 class Shape:
     resource: Resource
-    start: float
-    end: float
-
-    @classmethod
-    def from_tag(cls, tag: bs4.Tag, *, base_url: str) -> Shape:
-        # No, `"in" not in tag` does not work
-        if not tag["in"]:
-            raise ValueError("Tag has no 'in' parameter")
-        if not tag["out"]:
-            raise ValueError("Tag has no 'out' parameter")
-        if not tag["xlink:href"]:
-            raise ValueError("Tag has no 'xlink:href' parameter")
-
-        return cls(
-            resource=Resource(href=f"{base_url}/{tag['xlink:href']}"),
-            start=float(tag["in"]),
-            end=float(tag["out"]),
-        )
+    enables: List[Tuple[float, float]]
 
 
 @dataclasses.dataclass()
@@ -49,22 +56,30 @@ class Meeting:
         r = requests.get(f"{base_url}/presentation/{meeting_id}/metadata.xml")
         r.raise_for_status()
 
-        deskshare = Resource(href=f"{base_url}/presentation/{meeting_id}/deskshare/deskshare.webm")
-        webcams = Resource(href=f"{base_url}/presentation/{meeting_id}/video/webcams.mp4")
+        deskshare = Resource.check_and_create(href=f"{base_url}/presentation/{meeting_id}/deskshare/deskshare.mp4")
+        webcams = Resource.check_and_create(href=f"{base_url}/presentation/{meeting_id}/video/webcams.mp4")
 
         shape_soup = bs4.BeautifulSoup(requests.get(f"{base_url}/presentation/{meeting_id}/shapes.svg").text,
                                        "lxml")
-        shapes: List[Shape] = []
+
+        shapes: Dict[str, Shape] = {}
         for tag in shape_soup.find_all("image"):
-            try:
-                shapes.append(Shape.from_tag(tag, base_url=f"{base_url}/presentation/{meeting_id}"))
-            except ValueError:
-                continue
+            if not tag["in"]:
+                raise ValueError("Tag has no 'in' parameter")
+            if not tag["out"]:
+                raise ValueError("Tag has no 'out' parameter")
+            if not tag["xlink:href"]:
+                raise ValueError("Tag has no 'xlink:href' parameter")
+
+            url = tag["xlink:href"]
+            if url not in shapes:
+                shapes[url] = Shape(resource=Resource(f"{base_url}/presentation/{meeting_id}/{url}"), enables=[])
+            shapes[url].enables.append((tag["in"], tag["out"]))
 
         return cls(
             deskshare=deskshare,
             webcams=webcams,
-            shapes=shapes
+            shapes=list(shapes.values())
         )
 
     @classmethod

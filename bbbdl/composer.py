@@ -1,24 +1,30 @@
 from typing import *
 import ffmpeg
 from .resources import Meeting
+from .tracks import Tracks
 
 
-def compose_screensharing(meeting: Meeting) -> Tuple[ffmpeg.Stream, ffmpeg.Stream]:
-    """Keep the deskshare video and the webcam audio, while discarding the rest."""
+def compose_screensharing(meeting: Meeting, width: int, height: int) -> Tracks:
+    tracks = Tracks()
 
-    return (
-        meeting.deskshare.as_stream().video,
-        meeting.webcams.as_stream().audio,
-    )
+    if meeting.webcams:
+        tracks.overlay(meeting.webcams.get_video().filter("scale", width, height).filter("setsar", 1, 1))
+        tracks.amerge(meeting.webcams.get_audio())
+
+    if meeting.deskshare:
+        tracks.overlay(meeting.deskshare.get_video().filter("scale", width, height).filter("setsar", 1, 1))
+
+    return tracks
 
 
-def compose_lesson(meeting: Meeting) -> Tuple[ffmpeg.Stream, ffmpeg.Stream]:
-    """Keep slides, deskshare video and webcam audio, while discarding the rest."""
-
-    video_stream, audio_stream = compose_screensharing(meeting)
+def compose_lesson(meeting: Meeting, width: int, height: int) -> Tracks:
+    tracks = compose_screensharing(meeting, width, height)
 
     for shape in meeting.shapes:
-        video_stream = ffmpeg.overlay(video_stream, shape.resource.as_stream().video.filter("scale", 1280, 720),
-                                      enable=f"between(t, {shape.start}, {shape.end})")
+        scaled_split_shape = shape.resource.get_video().filter("scale", width, height).filter("setsar", 1, 1).split()
+        count = 0
+        for enable in shape.enables:
+            count += 1
+            tracks.overlay(scaled_split_shape.stream(count), enable=f"between(t, {enable[0]}, {enable[1]})")
 
-    return video_stream, audio_stream
+    return tracks
