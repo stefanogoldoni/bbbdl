@@ -3,22 +3,23 @@ import ffmpeg
 from .resources import Meeting
 
 
-def compose_screensharing(meeting: Meeting) -> Tuple[ffmpeg.Stream, ffmpeg.Stream]:
-    """Keep the deskshare video and the webcam audio, while discarding the rest."""
+def compose_screensharing(meeting: Meeting, width: int, height: int) -> Tuple[ffmpeg.Stream, ffmpeg.Stream]:
+    """Overlay the deskshare and the webcam."""
 
-    return (
-        meeting.deskshare.as_stream().video,
-        meeting.webcams.as_stream().audio,
-    )
+    webcams = meeting.webcams.stream_all().filter("scale", width, height)
+    deskshare = meeting.deskshare.stream_all().filter("scale", width, height)
+
+    return webcams.overlay(deskshare)
 
 
-def compose_lesson(meeting: Meeting) -> Tuple[ffmpeg.Stream, ffmpeg.Stream]:
+def compose_lesson(meeting: Meeting, width: int, height: int) -> Tuple[ffmpeg.Stream, ffmpeg.Stream]:
     """Keep slides, deskshare video and webcam audio, while discarding the rest."""
 
-    video_stream, audio_stream = compose_screensharing(meeting)
+    stream = compose_screensharing(meeting, width, height)
 
     for shape in meeting.shapes:
-        video_stream = ffmpeg.overlay(video_stream, shape.resource.as_stream().video.filter("scale", 1280, 720),
-                                      enable=f"between(t, {shape.start}, {shape.end})")
+        for enable in shape.enables:
+            scaled_stream = shape.resource.stream_all().filter("scale", width, height)
+            stream = stream.overlay(scaled_stream, enable=f"between(t, {enable[0]}, {enable[1]})")
 
-    return video_stream, audio_stream
+    return stream

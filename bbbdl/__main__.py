@@ -30,9 +30,9 @@ def download(input_url, output_file, overwrite=False, verbose_ffmpeg=False, debu
     meeting = Meeting.from_url(input_url)
 
     click.secho(f"Downloading: {input_url} -> {output_file}", err=True, fg="green")
-    streams = compose_lesson(meeting)
+    stream = compose_lesson(meeting, 1280, 720)
 
-    output = ffmpeg.output(*streams, output_file)
+    output = ffmpeg.output(stream, output_file)
 
     if debug:
         click.echo(" ".join(output.compile()))
