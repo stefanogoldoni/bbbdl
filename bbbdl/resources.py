@@ -10,13 +10,13 @@ from .urlhandler import playback_to_data
 class Resource:
     def __init__(self, href: str):
         self.href: str = href
-        self.uses: int = 0
-        self._stream: Optional[ffmpeg.Stream] = None
-        self._video_stream: Optional[ffmpeg.Stream] = None
-        self._audio_stream: Optional[ffmpeg.Stream] = None
+        self._video: Optional[ffmpeg.Stream] = None
+        self._video_count: int = 0
+        self._audio: Optional[ffmpeg.Stream] = None
+        self._audio_count: int = 0
 
     def __repr__(self):
-        return f"<{self.__class__.__qualname__} {self.href=} {self.uses=}>"
+        return f"<{self.__class__.__qualname__} href={self.href}>"
 
     @classmethod
     def check_and_create(cls, href: str) -> Optional[Resource]:
@@ -26,26 +26,17 @@ class Resource:
             return None
         return cls(href=href)
 
-    def streams(self) -> Tuple[ffmpeg.Stream, ffmpeg.Stream, ffmpeg.Stream]:
-        if self._stream is None or self._video_stream is None or self._audio_stream is None:
-            self._stream = ffmpeg.input(self.href).split()
-            self._video_stream = ffmpeg.input(self.href).video.split()
-            self._audio_stream = ffmpeg.input(self.href).audio.split()
-        self.uses += 1
-        return (
-            self._stream.stream(self.uses),
-            self._video_stream.stream(self.uses),
-            self._audio_stream.stream(self.uses),
-        )
+    def get_audio(self) -> ffmpeg.nodes.FilterableStream:
+        if self._audio is None:
+            self._audio = ffmpeg.input(self.href).audio.asplit()
+        self._audio_count += 1
+        return self._audio.stream(self._audio_count)
 
-    def stream_all(self) -> ffmpeg.Stream:
-        return self.streams()[0]
-
-    def stream_video(self) -> ffmpeg.Stream:
-        return self.streams()[1]
-
-    def stream_audio(self) -> ffmpeg.Stream:
-        return self.streams()[2]
+    def get_video(self) -> ffmpeg.nodes.FilterableStream:
+        if self._video is None:
+            self._video = ffmpeg.input(self.href).video.split()
+        self._video_count += 1
+        return self._video.stream(self._video_count)
 
 
 @dataclasses.dataclass()
@@ -71,7 +62,6 @@ class Meeting:
         shape_soup = bs4.BeautifulSoup(requests.get(f"{base_url}/presentation/{meeting_id}/shapes.svg").text,
                                        "lxml")
 
-        # FIXME: This is a dirty hack to make the scaling work
         shapes: Dict[str, Shape] = {}
         for tag in shape_soup.find_all("image"):
             if not tag["in"]:
