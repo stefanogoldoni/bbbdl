@@ -1,14 +1,16 @@
 bbbdl
 =================================
 
-Welcome to the documentation of bbbdl!
+A tool for downloading BigBlueButton meetings
 
-Table of contents
------------------
+Documentation
+-------------
 
 .. toctree::
    :maxdepth: 3
 
+   installation/index
+   usage/index
    autodoc/index
 
 Useful links

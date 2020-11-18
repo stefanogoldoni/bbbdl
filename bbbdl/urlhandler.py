@@ -6,7 +6,7 @@ playback_regex = re.compile(r"^(https?://.+)/playback/presentation/2\.0/playback
 "The regex used to parse BigBlueButton playback urls."
 
 
-def playback_to_data(url) -> Sequence[str]:
+def playback_to_data(url: str) -> Sequence[str]:
     """
     Autodetect the base url and the meeting id from a BigBlueButton playback url.
 
