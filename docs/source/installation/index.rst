@@ -4,7 +4,7 @@ Installation
 Requirements
 ------------
 
-You can install bbbdl on any computer which the following software already installed:
+You can install bbbdl on any computer with the following software already installed:
 
 * `Python 3.8+ <https://www.python.org/>`_
 * `ffmpeg <https://ffmpeg.org/download.html>`_
