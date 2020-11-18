@@ -34,6 +34,12 @@ Sync mode
 Sync mode is used to batch download all available meetings from a list file, skipping files that were already downloaded
 so to not download and render them twice.
 
+All options can be viewed with:
+
+.. code-block:: bash
+
+   bbbdl sync --help
+
 List file
 ~~~~~~~~~
 
@@ -62,7 +68,7 @@ current folder by running:
 Syncing from a remote list file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To sync using a JSON file provided through HTTPS, you can run:
+To sync using a JSON file provided through HTTPS, run:
 
 .. code-block:: bash
 
