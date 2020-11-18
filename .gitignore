@@ -10,3 +10,6 @@ dist/
 
 # PyCharm ignores
 .idea/
+
+# Docs ignore
+/docs/build
